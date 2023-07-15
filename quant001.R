@@ -1,6 +1,6 @@
 ##################################################################################
 # Playing with quanteda, see https://quanteda.io/
-# RHUL again 2023
+# RHUL again 
 # 
 # EAJ July 2023
 ##################################################################################
@@ -23,6 +23,7 @@ setwd(wdir)
 library(readtext)
 library(quanteda)
 library(quanteda.textplots)
+library(quanteda.textstats)
 
 # read in a text file
 ##rt_txt <- readtext("feasStudy.txt")
@@ -62,3 +63,8 @@ print(exampledfm)
 png("fS_wordcloud.png", width = 1440, height = 1440)
 textplot_wordcloud(exampledfm, max_words = 100)
 dev.off()
+
+# entropy log base 2
+entF <- textstat_entropy(exampledfm, "features", base = 2)   # 1274 obs, all zero
+entD <- textstat_entropy(exampledfm, "documents", base = 2)  # 9.454252
+
