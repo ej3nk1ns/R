@@ -99,3 +99,33 @@ cat("Water Scarcity entropy in bits = ", ent_WS, "\n")
 png("WS_Hist.png", width = 720, height = 720)
 hist(ccri_df$WaterScarcity, breaks = c(0, 2.5, 5.0, 7.5, 10))
 dev.off()
+
+# let's have a function
+calcEnt <- function(indic, numBins = 4){
+  # bin the indicator and calculate its entropy
+  dis_indic <- discretize(indic, numBins) 
+  cat("Bin counts", dis_indic, "Total ", sum(dis_indic), "\n")
+  ent_indic <- entropy(dis_indic, unit = "log2")
+  cat("Calculated entropy (no NAs), with", numBins, "bins = ", ent_indic, "\n")
+  return(ent_indic)
+}
+# apply the function to check results - data includes NAs
+#cat(calcEnt(ccri_df$WaterScarcity), "\n")
+
+# apply the function to all columns, after brutally dropping NAs
+ccri_df <- ccri_df[complete.cases(ccri_df), ]
+res <- apply(X = ccri_df, MARGIN = 2, FUN = calcEnt)
+
+# maybe 4 bins was ambitious, trying with only 2
+res <- apply(X = ccri_df, MARGIN = 2, FUN = calcEnt, numBins = 2)
+
+# and the index (still includes data from dropped NA rows)
+cat("Binning the index: ")
+Index <- calcEnt(CCRIndex, numBins = 2)
+png("IndexHist.png", width = 720, height = 720)
+hist(CCRIndex, breaks = c(0, 5.0, 10))
+dev.off()
+
+# how much information do we gain if we split the data set on indicator x?
+# for WaterScarcity:
+# Bin counts 31 83 Total  114 Calculated entropy (no NAs), with 2 bins =  0.8442202 
