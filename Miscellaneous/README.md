@@ -1,1 +1,1 @@
-xxx
+In an attempt to understand an energy supplier's estimating and charging approach, just over two years of data has been gathered by manual scraping of their website, and parsed in R into a format that can be plotted and analysed.
