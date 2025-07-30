@@ -1,63 +1,56 @@
 ###########################################################################
-# Script octo01.R  Plot octopus gas readings
+# Script octo02.R  Plot octopus electricity readings
 # July 2025 EAJ
 # calls: 
-# contains: fn_readDate, fn_readType, fn_readNumber
-# reads: gas-readings.txt
+# contains: fn_readDate, fn_readType, fn_readNumbers
+# reads: elec-readings.txt
 # plots: ...
 # writes: 
 ###########################################################################
 # clear environment 
 rm(list = ls())
 
-cat("\n*** Running script octo01 to plot gas energy readings:\n")
+cat("\n*** Running script octo02 to plot electricity energy readings:\n")
 
 setwd("~/R/Working/Octopus")
-gas_file <- "gas-readings.txt"
-
-# thanks to https://stackoverflow.com/questions/14582422/how-to-read-
-#multiple-lines-of-a-file-into-one-row-of-a-dataframe
-# scan the file into a list (data is on successive lines)
-#gas_raw <- scan(gas_file, what = character())
-#summary(gas_raw)
+elec_file <- "elec-readings.txt"
 
 # alternative approach: readLines can retrieve one line at a time
 # https://stackoverflow.com/questions/12626637/read-a-text-file-in-r-line-
 #by-line
 
 # define column vectors; the date one is a bit funny
-gDate <- as.Date(x = integer(0), origin = "1970-01-01")
-gType <- character()
-gNumber <- integer()
+eDate <- as.Date(x = integer(0), origin = "1970-01-01")
+eType <- character()
+eNight <- integer()
+eDay <- integer()
 
 ###########################################################################
 # define functions to process each data type
 ###########################################################################
 fn_readDate <- function(field){
+  
   # replace the st/nd/rd/th and convert to date type
-  #  print(field)
   field <- as.Date(sub("th|st|rd|nd", "", field), format = "%d %b %Y")
-  #  print(field)
-  #  cat(lineIn, "date", field, "\n")
   return(field)
 }
 ###########################################################################
 fn_readType <- function(field){
-  #cat(lineIn, "type", field, "\n")
+  
   return(field)
 }
-
 ###########################################################################
-fn_readNumber <- function(field){
-  # convert to integer
-  field <- as.integer(field)
-  #   cat(lineIn, "number", field, "\n")
-  return(field)
+fn_readNumbers <- function(field){
+  
+  # separate numbers and return as an unnested list
+  field <- sub("Night", "", field)
+  readings <- unlist(strsplit(field, split = "Day", fixed = TRUE))
+  #cat(lineIn, "number", field, "\n")
+  return(readings)
 }
-
 ###########################################################################
 # need to open the connection with file() to keep position as we read
-con = file(gas_file, "r")
+con = file(elec_file, "r")
 
 # count the lines we are reading and writing
 lineIn <- 0
@@ -73,18 +66,22 @@ while (TRUE) {
   # line in count = 1,5,9,13... are the date fields
   if(lineIn %% 4 == 0){
     # add to date vector
-    gDate[lineOut] <- fn_readDate(line)
+    eDate[lineOut] <- fn_readDate(line)
   }
   
   # line in count = 2,6,10,14 are the meter reading type fields
   if(lineIn %% 4 == 1){
-    gType[lineOut] <- fn_readType(line)
+    eType[lineOut] <- fn_readType(line)
   }
   
   # line in count = 3,7,11,15 are the meter readings
   if(lineIn %% 4 == 2){
-    gNumber[lineOut] <- fn_readNumber(line)
-    cat(gDate[lineOut], gType[lineOut], gNumber[lineOut], "\n")
+    readings <- fn_readNumbers(line)
+    #  cat(eDate[lineOut], eType[lineOut], line, "\n")
+   # print(readings)
+#    str(readings)
+    eNight[lineOut] <- as.integer(readings[1])
+    eDay[lineOut] <- as.integer(readings[2])
     
     # now increment the line out count
     lineOut <- lineOut + 1
@@ -100,30 +97,38 @@ close(con = con)
 ###########################################################################
 # create the data frame, and plot!
 ###########################################################################
-gType <- as.factor(gType)
+eType <- as.factor(eType)
 
-gas_df <- data.frame(gDate, gType, gNumber)
+elec_df <- data.frame(eDate, eType, eNight, eDay)
 
 # first plot
-plot(x = gas_df[gas_df$gType == "Estimated reading", ]$gDate, 
-     y = gas_df[gas_df$gType == "Estimated reading", ]$gNumber, 
-     #col = gas_df$gType,
-     main = "Gas meter readings 202x to 202y",
+plot(x = elec_df$eDate, 
+     y = elec_df$eNight, 
+     col = elec_df$eType,
+     main = "Electricity meter NIGHT readings 202x to 202y",
      xlab = "Date of reading",
      ylab = "Meter reading")
 
+plot(x = elec_df$eDate, 
+     y = elec_df$eDay, 
+     col = elec_df$eType,
+     main = "Electricity meter DAY readings 202x to 202y",
+     xlab = "Date of reading",
+     ylab = "Meter reading"
+  #   add = TRUE
+  )
+
 # now bars for actual readings, points for estimates
 
-your_df <- gas_df[gas_df$gType == "Your reading", ]
+#your_df <- gas_df[gas_df$gType == "Your reading", ]
 
-barplot(height = your_df[order(your_df$gNumber), ]$gNumber, 
-     col = "palegreen",
-     space = 0.5,
-     cex.names = 0.8,
-     names.arg = gas_df[gas_df$gType == "Your reading", ]$gDate,
-   #  main = "Gas meter readings 202x to 202y",
-  #   xlab = "Date of reading",
-  #   ylab = "Meter reading"
-   add = TRUE)
+#barplot(height = your_df[order(your_df$gNumber), ]$gNumber, 
+#     col = "palegreen",
+#     space = 0.5,
+#     cex.names = 0.8,
+#     names.arg = gas_df[gas_df$gType == "Your reading", ]$gDate,
+#  main = "Gas meter readings 202x to 202y",
+#   xlab = "Date of reading",
+#   ylab = "Meter reading"
+#   add = TRUE)
 
-#df <- data[order(data$num,decreasing = TRUE),]
