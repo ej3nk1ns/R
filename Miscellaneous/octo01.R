@@ -12,6 +12,9 @@ rm(list = ls())
 
 cat("\n*** Running script octo01 to plot gas energy readings:\n")
 
+library(viridisLite)            # for an accessible colour palette
+colour4 <- viridis(n = 4)       # define a colour scale
+
 setwd("~/R/Working/Octopus")
 gas_file <- "gas-readings.txt"
 
@@ -108,7 +111,7 @@ gas_df <- data.frame(gDate, gType, gNumber)
 plot(x = gas_df[gas_df$gType == "Estimated reading", ]$gDate, 
      y = gas_df[gas_df$gType == "Estimated reading", ]$gNumber, 
      #col = gas_df$gType,
-     main = "Gas meter readings 202x to 202y",
+     main = "Gas meter readings April 2023 to July 2025",
      xlab = "Date of reading",
      ylab = "Meter reading")
 
@@ -117,13 +120,28 @@ plot(x = gas_df[gas_df$gType == "Estimated reading", ]$gDate,
 your_df <- gas_df[gas_df$gType == "Your reading", ]
 
 barplot(height = your_df[order(your_df$gNumber), ]$gNumber, 
-     col = "palegreen",
-     space = 0.5,
-     cex.names = 0.8,
-     names.arg = gas_df[gas_df$gType == "Your reading", ]$gDate,
-   #  main = "Gas meter readings 202x to 202y",
-  #   xlab = "Date of reading",
-  #   ylab = "Meter reading"
-   add = TRUE)
+        col = colour4[3],
+        space = 0.5,
+        cex.names = 0.8,
+        names.arg = your_df[order(your_df$gNumber), ]$gDate,
+        main = "Gas meter readings April 2023 to July 2025",
+        axis.lty = 1,
+        xlab = "Date of reading",
+        ylab = "Meter reading"
+)
 
-#df <- data[order(data$num,decreasing = TRUE),]
+# plot both reading types, denoted by colours, with a legend
+palette(colour4[3:4])
+
+barplot(height = gas_df[order(gas_df$gDate), ]$gNumber, 
+        col = gas_df[order(gas_df$gDate), ]$gType,   
+        space = 0.4,
+        cex.names = 0.75,
+        names.arg = gas_df[order(gas_df$gDate), ]$gDate,
+        main = "Gas meter readings April 2023 to July 2025",
+        axis.lty = 1,
+        las = 2,                   # rotated labels
+#        xlab = "Date of reading",
+        ylab = "Meter reading",
+)
+legend("topleft", legend = gas_df[2:3, ]$gType, fill = colour4[3:4])
