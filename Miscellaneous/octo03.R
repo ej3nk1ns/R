@@ -2,7 +2,7 @@
 # Script octo03.R  Plot octopus credits and charges
 # July 2025 EAJ
 # calls: 
-# contains: fn_readDate, fn_readNumbers
+# contains: fn_readDate, fn_readNumbers <- are these used?
 # reads: transactions-no-workings.txt
 # plots: ...
 # writes: 
@@ -28,36 +28,49 @@ amount <- numeric()
 balance <- numeric()
 
 ###########################################################################
-# define functions to process each data type
+# define functions to process different data types
 ###########################################################################
-fn_readDate <- function(field){
+#fn_readDate <- function(field){
+#  
+#  cat(lineIn, "readDate date", field, "\n")
+#  
+#  # convert to date type
+#  field <- as.Date(field, format = "%d %b %Y")
+#  return(field)
+#}
+###########################################################################
+fn_saveDate <- function(dateLine){
+  # save the date information in a useful format
   
-  cat(lineIn, "date", field, "\n")
+  # insert a space between day and month
+  # https://stackoverflow.com/questions/26896971/add-space-between-two-
+  #letters-in-a-string-in-r#26897007
+  dateLine <- gsub("([0-9])([A-Z])", "\\1 \\2", dateLine)
+  #cat("Saved date:", dateLine, "\n")
   
-  # convert to date type
-  field <- as.Date(field, format = "%d %b %Y")
-  return(field)
+  return(dateLine)
+}
+
+###########################################################################
+fn_saveYear <- function(dateLine){
+  # extract the year only
+  # https://stackoverflow.com/questions/40744463/how-to-extract-#numbers-
+  #from-text
+  savedYear <- as.numeric(strsplit(dateLine, "\\D+")[[1]][-1])
+  #cat("Saved year:", savedYear, "\n")
+  return(savedYear)
 }
 ###########################################################################
-fn_readNumbers <- function(field){
-  
-  # separate numbers and return as an unnested list
-  #  field <- sub("Night", "", field)
-  #  readings <- unlist(strsplit(field, split = "Day", fixed = TRUE))
-  cat(lineIn, "number", field, "\n")
-  #  return(readings)
+fn_setDate <- function(string){
+  # convert to a date field
+  stringAsDate <- as.Date(string, format = "%d %b %Y")
+  return(stringAsDate)
 }
 ###########################################################################
-fn_previous <- function(line, previous){
-  # rotate the previous lines read to use for bank date
-  print(nchar(line))
-  if(nchar(line) != 0){
-    cat("length of previous", length(previous), "\n")
-    if(length(previous) == 0){
-      previous[1] <- line
-    }
-  }
-  return(previous)
+fn_numeric <- function(string){
+  # convert a string, maybe with commas, to a number
+  number <- as.numeric(sub(",", "", string))
+  return(number)
 }
 ###########################################################################
 # main script
@@ -69,7 +82,7 @@ con = file(cc_file, "r")
 lineIn <- 0
 lineOut <- 1
 
-# save and count previous lines to retrieve some dates 
+# define vbles to save and count previous lines, to retrieve some dates 
 previous <- character()
 i <- 1
 
@@ -90,54 +103,36 @@ while (TRUE) {
     
     # next, save any short (date) lines to our 'previous' list
     if (nchar(line) <= 15){
-      previous[i] <- line
-      
-      # insert a space between day and month
-      # https://stackoverflow.com/questions/26896971/add-space-between-
-      #two-letters-in-a-string-in-r#26897007
-      previous[i] <- gsub("([0-9])([A-Z])", "\\1 \\2", previous[i])
-      
-      #print(previous[i])
+      previous[i] <- fn_saveDate(line)
       
       # save the year separately
       if(grepl("202", previous[i], fixed = TRUE)){
         # this is a year field, save it until it changes
-        
-        # extract the year only
-        # https://stackoverflow.com/questions/40744463/how-to-extract-
-        #numbers-from-text
-        #print(as.numeric(strsplit(previous[i], "\\D+")[[1]][-1]))
-        year <- as.numeric(strsplit(previous[i], "\\D+")[[1]][-1])
-        print(year)
+        year <- fn_saveYear(previous[i])
       }
       i <- i + 1
     } else {
       
-      # check the type of record
+      # now check the type of record, is it Bank or Fuel?
       if (substr(line, 1,3) == "Ban"){
         
+        ###################################################################
         # this is a bank payment record
+        ###################################################################
         #cat("Bank", line, "\n")
         fuel[lineOut] <- "Bank"
         
-        # extract bank transfer date from the titles, year and day ########
-
-        print(paste(previous[i-1], year))
-        print(as.Date(paste(previous[i-1], year), format = "%d %b %Y"))
-       # print(paste(previous[i-1], year))
-        
+        # extract bank transfer date from the 'previous' list #############
+        dateFrom[lineOut] <- fn_setDate(paste(previous[i-1], year))
         # set both dates the same
-        dateFrom[lineOut] <- as.Date(paste(previous[i-1], year), 
-                                     format = "%d %b %Y")
-        dateTo[lineOut] <- as.Date(paste(previous[i-1], year), 
-                                     format = "%d %b %Y")
+        dateTo[lineOut] <- fn_setDate(paste(previous[i-1], year))
         
         # extract amount paid #############################################
         splitLine <- strsplit(line, "£", fixed = TRUE)
         split2 <- strsplit(unlist(splitLine)[2], " ", fixed = TRUE)
         
         # remove any commas
-        amount[lineOut] <- as.numeric(sub(",", "", unlist(split2)[1]))
+        amount[lineOut] <- fn_numeric(unlist(split2)[1])
         
         # extract balance #################################################
         balance[lineOut] <- as.numeric(unlist(splitLine)[3])
@@ -148,7 +143,9 @@ while (TRUE) {
         
       } else {
         
+        ###################################################################
         # this is a gas or electricity record
+        ###################################################################
         #cat("Fuel", line, "\n")
         
         # now parse the line
@@ -187,10 +184,12 @@ while (TRUE) {
             balance[lineOut] <- as.numeric(sub("£", "", 
                                                substr(line, 68, 75)))
           } else{
-            # not the special case credit line
+            # credit, but not the special case credit line
             
             # extract date ################################################
-            cat(unlist(previous[i-1]), unlist(previous[i-2]), "\n")
+            dateFrom[lineOut] <- fn_setDate(paste(previous[i-1], year))
+            # set both dates the same
+            dateTo[lineOut] <- fn_setDate(paste(previous[i-1], year))
             
             # extract amount of credit ####################################
             # first check if the balance is +ve or -ve
@@ -205,28 +204,29 @@ while (TRUE) {
                                               unlist(splitLine)[2]))
             
             # extract balance #############################################
-            balance[lineOut] <- as.numeric(sub(",", "", 
-                                               unlist(splitLine)[3]))
+            balance[lineOut] <- fn_numeric(unlist(splitLine)[3])
             if (minus){
               # reapply the minus sign
               balance[lineOut] <- balance[lineOut] * -1
             }
             
-            # set credit and initialise other fields
+            # set credit and initialise other fields ######################
             cc[lineOut] <- "credit"
             kWh[lineOut] <- 0
             
           } # end special case check 
         } else {
-          # this is a charge, not a credit ################################
+          
+          #################################################################
+          # this is a charge, not a credit 
+          #################################################################
           
           # extract the from date #########################################
           splitLine <- strsplit(line, " - ", fixed = TRUE)
-          dateFrom[lineOut] <- as.Date(unlist(splitLine)[1], 
-                                       format = "%d %b %Y")
+          dateFrom[lineOut] <- fn_setDate(unlist(splitLine)[1])
+          
           # remove from date from line
           line <- unlist(splitLine)[2]
-          #print(line)
           
           # extract the to date, using the emoji as separator #############
           if (fuel[lineOut] == "Gas"){
@@ -235,8 +235,8 @@ while (TRUE) {
             splitLine <- strsplit(line, "⚡", fixed = TRUE)
           }
           
-          dateTo[lineOut] <- as.Date(unlist(splitLine)[1], 
-                                     format = "%d %b %Y")
+          dateTo[lineOut] <- fn_setDate(unlist(splitLine)[1])
+          
           # remove to date from line
           line <- unlist(splitLine)[2]
           
@@ -262,8 +262,8 @@ while (TRUE) {
           
           # extract balance ###############################################
           #remove any commas
-          balance[lineOut] <- as.numeric(sub(",", "", 
-                                             unlist(splitLine)[3]))
+          balance[lineOut] <- fn_numeric(unlist(splitLine)[3])
+          
           # reapply the minus sign, if there was one
           if(minus){
             balance[lineOut] <- balance[lineOut] * -1
@@ -285,7 +285,6 @@ while (TRUE) {
   } # end check for blank lines
 } # end read loop
 
-#print(previous)
 # tidy up
 close(con = con)
 
@@ -294,4 +293,39 @@ close(con = con)
 ###########################################################################
 fuel <- as.factor(fuel)
 cc <- as.factor(cc)
+
 tranx_df <- data.frame(fuel, dateFrom, dateTo, kWh, cc, amount, balance)
+
+# add a column for +ve or -ve balance
+tranx_df$sign <- ifelse(tranx_df$balance >= 0, 1, 2)
+
+# define colours
+colscheme <- c("black", "red")
+
+# set up the plot - some entries are post-dated ha ha
+cat("*** Plotting balance of energy account\n")
+plot(x = tranx_df$dateTo, 
+     y = tranx_df$balance,
+     type = "n",
+     main = "Transactions on the energy account (charges, credits and payments)",
+     ylab = "Account balance (£)",
+     xlab = "",
+     ylim = c(-3500, 1000),
+     cex.axis = 0.8,
+     las = 2)
+
+# add lines in specified colour
+lines(x = tranx_df$dateTo, 
+      y = tranx_df$balance,
+      col = colour9[1])
+
+# add points coloured for + or - balance
+points(x = tranx_df$dateTo, 
+       y = tranx_df$balance,
+       pch = 19,
+       col = tranx_df$sign,
+       bg = tranx_df$sign)
+
+abline(h = 0,
+       col = "darkgrey",
+       lty = "dashed")

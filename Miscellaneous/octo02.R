@@ -4,7 +4,7 @@
 # calls: 
 # contains: fn_readDate, fn_readType, fn_readNumbers
 # reads: elec-readings.txt
-# plots: ...
+# plots: electricity readings, interactively
 # writes: 
 ###########################################################################
 # clear environment 
@@ -18,7 +18,7 @@ elec_file <- "elec-readings.txt"
 library(viridisLite)            # for an accessible colour palette
 colour9 <- viridis(n = 9)       # define a colour scale
 
-# alternative approach: readLines can retrieve one line at a time
+# readLines can retrieve one line at a time
 # https://stackoverflow.com/questions/12626637/read-a-text-file-in-r-line-
 #by-line
 
@@ -80,9 +80,7 @@ while (TRUE) {
   # line in count = 3,7,11,15 are the meter readings
   if(lineIn %% 4 == 2){
     readings <- fn_readNumbers(line)
-    #  cat(eDate[lineOut], eType[lineOut], line, "\n")
-   # print(readings)
-#    str(readings)
+    #cat(eDate[lineOut], eType[lineOut], line, "\n")
     eNight[lineOut] <- as.integer(readings[1])
     eDay[lineOut] <- as.integer(readings[2])
     
@@ -108,36 +106,38 @@ colscheme <- c(colour9[7], colour9[1], colour9[5], colour9[3])
 palette(colscheme)
 
 # night readings
+cat("*** Plotting Night meter readings\n")
 barplot(height = elec_df[order(elec_df$eDate), ]$eNight, 
-     col = elec_df[order(elec_df$eDate), ]$eType,
-     main = "Electricity meter NIGHT readings April 2023 to July 2025",
-     space = 0.4,
-     cex.names = 0.75,
-     cex.axis = 0.9,
-     names.arg = elec_df[order(elec_df$eDate), ]$eDate,
-     ylim = c(39000, 48500),
-     xpd = FALSE,                    # truncate bars at y limits
-     ylab = "Meter reading",
-     axis.lty = 1,                   # show x axis
-     las = 2
+        col = elec_df[order(elec_df$eDate), ]$eType,
+        main = "Electricity meter NIGHT readings April 2023 to July 2025",
+        space = 0.4,
+        cex.names = 0.75,
+        cex.axis = 0.9,
+        names.arg = elec_df[order(elec_df$eDate), ]$eDate,
+        ylim = c(39000, 48500),
+        xpd = FALSE,                    # truncate bars at y limits
+        ylab = "Meter reading",
+        axis.lty = 1,                   # show x axis
+        las = 2
 )
 
 legend("topleft", legend = sort(unique(elec_df$eType)), fill = colscheme)
 
 # day readings
+cat("*** Plotting Day meter readings\n")
 barplot(height = elec_df[order(elec_df$eDate), ]$eDay, 
-     col = elec_df[order(elec_df$eDate), ]$eType,
-     main = "Electricity meter DAY readings April 2023 to July 2025",
-     space = 0.4,
-     cex.names = 0.75,
-     cex.axis = 0.9,
-     names.arg = elec_df[order(elec_df$eDate), ]$eDate,
-     ylim = c(39000, 48500),
-     xpd = FALSE,                    # truncate bars at y limits
-     ylab = "Meter readings",
-     axis.lty = 1,                   # show x axis
-     las = 2
-  )
+        col = elec_df[order(elec_df$eDate), ]$eType,
+        main = "Electricity meter DAY readings April 2023 to July 2025",
+        space = 0.4,
+        cex.names = 0.75,
+        cex.axis = 0.9,
+        names.arg = elec_df[order(elec_df$eDate), ]$eDate,
+        ylim = c(39000, 48500),
+        xpd = FALSE,                    # truncate bars at y limits
+        ylab = "Meter readings",
+        axis.lty = 1,                   # show x axis
+        las = 2
+)
 
 legend("topleft", legend = sort(unique(elec_df$eType)), fill = colscheme)
 
@@ -149,18 +149,21 @@ legend("topleft", legend = sort(unique(elec_df$eType)), fill = colscheme)
 
 # create a matrix of the readings to plot side by side
 tpose <- t("row.names<-"(as.matrix(elec_df[3:4]), 
-                elec_df$eDate))
+                         elec_df$eDate))
+main <- "Electricity readings (Night and Day) from April 2023 to July 2025"
 
-# https://stackoverflow.com/questions/18339725/sorting-matrix-by-column-names
+# https://stackoverflow.com/questions/18339725/sorting-matrix-by-column-
+#names
 
 # convert column names back to date and plot
+cat("*** Plotting Day and Night meter readings together\n")
 barplot(tpose[ , order(as.integer(colnames(tpose)))],
         # sort by integer not character
         names.arg = as.Date(as.integer(colnames(
           tpose[ , order(as.integer(colnames(tpose)))])), 
-                            format = "%Y %m %d"),
+          format = "%Y %m %d"),
         las = 2,
-        main = "Electricity readings (Night and Day) from April 2023 to July 2025",
+        main = main,
         ylab = "Meter reading",
         ylim = c(39000, 49500),
         xpd = FALSE,            # truncate bars at y limits
