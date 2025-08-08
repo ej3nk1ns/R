@@ -73,6 +73,51 @@ fn_numeric <- function(string){
   return(number)
 }
 ###########################################################################
+fn_plotBalance <- function(df, main){
+  # plot the balance after each transaction
+  
+  plot(x = df$dateTo, 
+       y = df$balance,
+       type = "n",
+       main = main,
+       ylab = "Account balance (£)",
+       xlab = "",
+       ylim = c(-3500, 1000),
+       cex.axis = 0.8,
+       las = 2)
+  
+  # add lines in specified colour
+  lines(x = df$dateTo, 
+        y = df$balance,
+        col = colour9[1])
+  
+  # add points coloured for credit or charge
+  points(x = df$dateTo, 
+         y = df$balance,
+         pch = 19,
+         col =  df$cc, ##sign,
+         bg = df$cc)  ##sign)
+  
+  abline(h = 0,
+         col = "darkgrey",
+         lty = "dashed")
+  
+  legend("topleft", 
+         legend = #sort(
+           unique(df$cc), 
+         #decreasing = TRUE),
+         fill = colscheme)
+  
+  # label the points with the first letter of fuel, offset in x
+  text(x = df$dateTo + 10, 
+       y = df$balance,  
+       label =  substr(df$fuel, 1, 1),
+       cex = 0.75)     
+  
+  mtext("Charges, credits and payments", side = 3)
+}
+
+###########################################################################
 # main script
 ###########################################################################
 # need to open the connection with file() to keep position as we read
@@ -129,13 +174,18 @@ while (TRUE) {
         
         # extract amount paid #############################################
         splitLine <- strsplit(line, "£", fixed = TRUE)
+        print(splitLine)
         split2 <- strsplit(unlist(splitLine)[2], " ", fixed = TRUE)
+        #print(split2)
         
         # remove any commas
         amount[lineOut] <- fn_numeric(unlist(split2)[1])
         
         # extract balance #################################################
         balance[lineOut] <- as.numeric(unlist(splitLine)[3])
+        
+        ## we have not checked for a negative balance!
+        
         
         # initialise other fields
         kWh[lineOut] <- 0
@@ -300,32 +350,35 @@ tranx_df <- data.frame(fuel, dateFrom, dateTo, kWh, cc, amount, balance)
 tranx_df$sign <- ifelse(tranx_df$balance >= 0, 1, 2)
 
 # define colours
-colscheme <- c("black", "red")
+colscheme <- c("red", "black")
+#colscheme <- c("black", "red")
+
+# set the colour order
+palette(colscheme)
 
 # set up the plot - some entries are post-dated ha ha
-cat("*** Plotting balance of energy account\n")
-plot(x = tranx_df$dateTo, 
-     y = tranx_df$balance,
-     type = "n",
-     main = "Transactions on the energy account (charges, credits and payments)",
-     ylab = "Account balance (£)",
-     xlab = "",
-     ylim = c(-3500, 1000),
-     cex.axis = 0.8,
-     las = 2)
+cat("*** Plotting balance of energy account in transaction order\n")
 
-# add lines in specified colour
-lines(x = tranx_df$dateTo, 
-      y = tranx_df$balance,
-      col = colour9[1])
+mn <- "Energy account balance in transaction order"
+fn_plotBalance(tranx_df, mn)
 
-# add points coloured for + or - balance
-points(x = tranx_df$dateTo, 
-       y = tranx_df$balance,
-       pch = 19,
-       col = tranx_df$sign,
-       bg = tranx_df$sign)
+text(x = as.Date("2023-08-01"), 
+     y = -2500, 
+     label = "Look what Octopus hath wrought!")
 
-abline(h = 0,
-       col = "darkgrey",
-       lty = "dashed")
+###########################################################################
+
+# now sort and plot again
+cat("*** Plotting balance of energy account in date order\n")
+
+mn <- "Energy account balance in date order"
+# sort by balance as well for line continuity on the plot
+fn_plotBalance(tranx_df[order(tranx_df$dateTo, -tranx_df$balance), ], mn)
+
+text(x = as.Date("2023-12-14"), 
+     y = -2500, 
+     label = "Notes\n\nMeters were read April, May, June, November 2023,
+     January, February, July 2024 and March, April, May 2025.
+     This generally triggers credits, due to over-estimating.\n\n
+     B = Bank transfer,  E = Electricity charge/credit,  G = Gas charge/credit.")
+
