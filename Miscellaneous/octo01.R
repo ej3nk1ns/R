@@ -97,10 +97,14 @@ while (TRUE) {
 close(con = con)
 
 ###########################################################################
-# create the data frame, and plot!
+# create the data frame, export and plot!
 ###########################################################################
 gType <- as.factor(gType)
 gas_df <- data.frame(gDate, gType, gNumber)
+
+write.csv(gas_df, 
+          file = "gas.csv",
+          row.names = FALSE)
 
 # first plot, estimated readings
 cat("*** Plotting estimated readings\n")

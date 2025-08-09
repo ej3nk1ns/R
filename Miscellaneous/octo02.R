@@ -96,12 +96,16 @@ while (TRUE) {
 close(con = con)
 
 ###########################################################################
-# create the data frame, and plot separate day and night
+# create the data frame, export data, and plot separate day and night
 ###########################################################################
 eType <- as.factor(eType)
 elec_df <- data.frame(eDate, eType, eNight, eDay)
 
-# define colours
+write.csv(elec_df, 
+          file = "elec.csv",
+          row.names = FALSE)
+
+# define colours and their order
 colscheme <- c(colour9[7], colour9[1], colour9[5], colour9[3])
 palette(colscheme)
 
