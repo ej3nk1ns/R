@@ -2,9 +2,10 @@
 # Script octo03.R  Plot octopus credits and charges
 # July 2025 EAJ
 # calls: 
-# contains: fn_readDate, fn_readNumbers <- are these used?
+# contains: fn_saveDate, fn_saveYear, fn_setDate, fn_numeric,
+#           fn_plotBalance, fn__minus
 # reads: transactions-no-workings.txt
-# plots: ...
+# plots: energy account balance in two different orders, interactively
 # writes: 
 ###########################################################################
 # clear environment 
@@ -30,15 +31,6 @@ balance <- numeric()
 ###########################################################################
 # define functions to process different data types
 ###########################################################################
-#fn_readDate <- function(field){
-#  
-#  cat(lineIn, "readDate date", field, "\n")
-#  
-#  # convert to date type
-#  field <- as.Date(field, format = "%d %b %Y")
-#  return(field)
-#}
-###########################################################################
 fn_saveDate <- function(dateLine){
   # save the date information in a useful format
   
@@ -50,7 +42,6 @@ fn_saveDate <- function(dateLine){
   
   return(dateLine)
 }
-
 ###########################################################################
 fn_saveYear <- function(dateLine){
   # extract the year only
@@ -95,17 +86,15 @@ fn_plotBalance <- function(df, main){
   points(x = df$dateTo, 
          y = df$balance,
          pch = 19,
-         col =  df$cc, ##sign,
-         bg = df$cc)  ##sign)
+         col =  df$cc, 
+         bg = df$cc)  
   
   abline(h = 0,
          col = "darkgrey",
          lty = "dashed")
   
   legend("topleft", 
-         legend = #sort(
-           unique(df$cc), 
-         #decreasing = TRUE),
+         legend = unique(df$cc),
          fill = colscheme)
   
   # label the points with the first letter of fuel, offset in x
@@ -115,6 +104,13 @@ fn_plotBalance <- function(df, main){
        cex = 0.75)     
   
   mtext("Charges, credits and payments", side = 3)
+}
+###########################################################################
+fn_minus <- function(value){
+  # correct for a minus sign
+  value <- value * -1
+  
+  return(value)
 }
 
 ###########################################################################
@@ -174,18 +170,20 @@ while (TRUE) {
         
         # extract amount paid #############################################
         splitLine <- strsplit(line, "£", fixed = TRUE)
-        print(splitLine)
         split2 <- strsplit(unlist(splitLine)[2], " ", fixed = TRUE)
-        #print(split2)
         
-        # remove any commas
+        # remove any commas and convert to number
         amount[lineOut] <- fn_numeric(unlist(split2)[1])
         
         # extract balance #################################################
+        # first check if the balance is +ve or -ve
+        minus <- grepl("-", unlist(splitLine)[2], fixed = TRUE)
+        
         balance[lineOut] <- as.numeric(unlist(splitLine)[3])
-        
-        ## we have not checked for a negative balance!
-        
+        # reapply the minus sign
+        if (minus){ 
+          balance[lineOut] <- fn_minus(balance[lineOut]) 
+        }
         
         # initialise other fields
         kWh[lineOut] <- 0
@@ -200,12 +198,12 @@ while (TRUE) {
         
         # now parse the line
         if (substr(line, 1,3) == "Gas"){
-          # parse gas
+          # parse gas, remove from line
           fuel[lineOut] <- "Gas"
           line <- sub("Gas", "", line)
           
         } else {
-          # parse electricity
+          # parse electricity likewise
           fuel[lineOut] <- substr(line, 1,11)
           line <- sub("Electricity", "", line)
           
@@ -257,7 +255,7 @@ while (TRUE) {
             balance[lineOut] <- fn_numeric(unlist(splitLine)[3])
             if (minus){
               # reapply the minus sign
-              balance[lineOut] <- balance[lineOut] * -1
+              balance[lineOut] <- fn_minus(balance[lineOut]) 
             }
             
             # set credit and initialise other fields ######################
@@ -305,8 +303,8 @@ while (TRUE) {
           if(minus){
             line[5] <- sub("-", "", line[5])
           }
+          # now can split on the £ sign
           splitLine <- strsplit(line[5], "£", fixed = TRUE)
-          
           amount[lineOut] <- as.numeric(sub("£", "", 
                                             unlist(splitLine)[2]))
           
@@ -339,19 +337,19 @@ while (TRUE) {
 close(con = con)
 
 ###########################################################################
-# create the data frame, and plots
+# create the data frame, export, and plot
 ###########################################################################
 fuel <- as.factor(fuel)
 cc <- as.factor(cc)
 
 tranx_df <- data.frame(fuel, dateFrom, dateTo, kWh, cc, amount, balance)
 
-# add a column for +ve or -ve balance
-tranx_df$sign <- ifelse(tranx_df$balance >= 0, 1, 2)
+write.csv(tranx_df, 
+          file = "tranx.csv",
+          row.names = FALSE)
 
-# define colours
+# define financial colours
 colscheme <- c("red", "black")
-#colscheme <- c("black", "red")
 
 # set the colour order
 palette(colscheme)
@@ -362,16 +360,17 @@ cat("*** Plotting balance of energy account in transaction order\n")
 mn <- "Energy account balance in transaction order"
 fn_plotBalance(tranx_df, mn)
 
-text(x = as.Date("2023-08-01"), 
+text(x = as.Date("2023-10-01"), 
      y = -2500, 
      label = "Look what Octopus hath wrought!")
 
 ###########################################################################
-
 # now sort and plot again
+###########################################################################
 cat("*** Plotting balance of energy account in date order\n")
 
 mn <- "Energy account balance in date order"
+
 # sort by balance as well for line continuity on the plot
 fn_plotBalance(tranx_df[order(tranx_df$dateTo, -tranx_df$balance), ], mn)
 
@@ -380,5 +379,28 @@ text(x = as.Date("2023-12-14"),
      label = "Notes\n\nMeters were read April, May, June, November 2023,
      January, February, July 2024 and March, April, May 2025.
      This generally triggers credits, due to over-estimating.\n\n
-     B = Bank transfer,  E = Electricity charge/credit,  G = Gas charge/credit.")
+     B = Bank transfer,  E = Electricity charge/credit,  
+     G = Gas charge/credit.")
 
+###########################################################################
+# some exploratory plots
+###########################################################################
+cat("*** Plotting some exploratory things\n")
+# range of balance values
+#hist(tranx_df$balance)
+
+# range of time intervals for readings (excluding credits)
+intervals <- tranx_df$dateTo - tranx_df$dateFrom
+hist(as.numeric(intervals[intervals != 0]),
+     breaks = 15,
+     xaxt = "n",
+     xlab = "Time interval in days",
+     main = "Meter reading interval ranges",
+     col = colour9[5])
+
+axis(1, at = seq(from = 1, to = 99, by = 5) + 2)
+text(x = 65, 
+     y = 25, 
+     label = "Most often the gap between meter readings or estimates is 30 days,
+     but sometimes as little as one day, or as much as a quarter, which
+     adds to the confusion.")
