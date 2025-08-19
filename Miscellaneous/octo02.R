@@ -113,7 +113,7 @@ palette(colscheme)
 cat("*** Plotting Night meter readings\n")
 barplot(height = elec_df[order(elec_df$eDate), ]$eNight, 
         col = elec_df[order(elec_df$eDate), ]$eType,
-        main = "Electricity meter NIGHT readings April 2023 to July 2025",
+        main = "Electricity meter NIGHT readings April 2023 to August 2025",
         space = 0.4,
         cex.names = 0.75,
         cex.axis = 0.9,
@@ -131,7 +131,7 @@ legend("topleft", legend = sort(unique(elec_df$eType)), fill = colscheme)
 cat("*** Plotting Day meter readings\n")
 barplot(height = elec_df[order(elec_df$eDate), ]$eDay, 
         col = elec_df[order(elec_df$eDate), ]$eType,
-        main = "Electricity meter DAY readings April 2023 to July 2025",
+        main = "Electricity meter DAY readings April 2023 to August 2025",
         space = 0.4,
         cex.names = 0.75,
         cex.axis = 0.9,
@@ -154,7 +154,7 @@ legend("topleft", legend = sort(unique(elec_df$eType)), fill = colscheme)
 # create a matrix of the readings to plot side by side
 tpose <- t("row.names<-"(as.matrix(elec_df[3:4]), 
                          elec_df$eDate))
-main <- "Electricity readings (Night and Day) from April 2023 to July 2025"
+main <- "Electricity readings (Night and Day) from April 2023 to August 2025"
 
 # https://stackoverflow.com/questions/18339725/sorting-matrix-by-column-
 #names
@@ -169,7 +169,7 @@ barplot(tpose[ , order(as.integer(colnames(tpose)))],
         las = 2,
         main = main,
         ylab = "Meter reading",
-        ylim = c(39000, 49500),
+        ylim = c(39000, 50000),
         xpd = FALSE,            # truncate bars at y limits
         cex.names = 0.8,
         cex.axis = 0.9,

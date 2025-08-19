@@ -14,7 +14,7 @@ rm(list = ls())
 cat("\n*** Running script octo03 to plot credits and charges:\n")
 
 setwd("~/R/Working/Octopus")
-cc_file <- "transactions-no-workings.txt"
+cc_file <- "transactions-no-workings-Aug.txt"
 
 library(viridisLite)            # for an accessible colour palette
 colour9 <- viridis(n = 9)       # define a colour scale
@@ -377,7 +377,7 @@ fn_plotBalance(tranx_df[order(tranx_df$dateTo, -tranx_df$balance), ], mn)
 text(x = as.Date("2023-12-14"), 
      y = -2500, 
      label = "Notes\n\nMeters were read April, May, June, November 2023,
-     January, February, July 2024 and March, April, May 2025.
+     January, February, July 2024 and March, April, May, August 2025.
      This generally triggers credits, due to over-estimating.\n\n
      B = Bank transfer,  E = Electricity charge/credit,  
      G = Gas charge/credit.")

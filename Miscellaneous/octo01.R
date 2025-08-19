@@ -111,7 +111,7 @@ cat("*** Plotting estimated readings\n")
 plot(x = gas_df[gas_df$gType == "Estimated reading", ]$gDate, 
      y = gas_df[gas_df$gType == "Estimated reading", ]$gNumber, 
      #col = gas_df$gType,
-     main = "Gas meter readings (estimated) April 2023 to July 2025",
+     main = "Gas meter readings (estimated) April 2023 to August 2025",
      xlab = "Date of estimation",
      ylab = "Meter reading")
 
@@ -124,7 +124,7 @@ barplot(height = your_df[order(your_df$gNumber), ]$gNumber,
         space = 0.5,
         cex.names = 0.8,
         names.arg = your_df[order(your_df$gNumber), ]$gDate,
-        main = "Gas meter readings (actual) April 2023 to July 2025",
+        main = "Gas meter readings (actual) April 2023 to August 2025",
         axis.lty = 1,
         ylim = c(2000, 7000),
         xpd = FALSE,               # truncate bars at y limits
@@ -141,11 +141,11 @@ barplot(height = gas_df[order(gas_df$gDate), ]$gNumber,
         space = 0.4,
         cex.names = 0.75,
         names.arg = gas_df[order(gas_df$gDate), ]$gDate,
-        main = "Gas meter readings April 2023 to July 2025",
+        main = "Gas meter readings April 2023 to August 2025",
         axis.lty = 1,
         las = 2,                   # rotated labels
         ylim = c(2000, 7000),
         xpd = FALSE,               # truncate bars at y limits
         ylab = "Meter reading",
 )
-legend("topleft", legend = gas_df[2:3, ]$gType, fill = colour4[3:4])
+legend("topleft", legend = gas_df[2:1, ]$gType, fill = colour4[3:4])
